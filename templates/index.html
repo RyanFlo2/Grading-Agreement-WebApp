@@ -1,1 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grading Agreement Analysis</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; padding: 20px; background-color: #f4f4f4; }
+        h2 { text-align: center; }
+        #uploadSection { text-align: center; margin-bottom: 20px; }
+        input[type="file"] { padding: 10px; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { border: 1px solid black; padding: 8px; text-align: center; }
+        th { background-color: #ddd; }
+        .green { background-color: #98FB98; }
+        .yellow { background-color: #FFD700; }
+        .red { background-color: #FF6347; }
+    </style>
+</head>
+<body>
 
+    <h2>Grading Agreement Analysis</h2>
+
+    <div id="uploadSection">
+        <input type="file" id="fileInput">
+        <button onclick="uploadFile()">Upload</button>
+    </div>
+
+    <table id="resultsTable">
+        <thead>
+            <tr>
+                <th>Grader Name</th>
+                <th>Group 1 Agreement</th>
+                <th>Group 2 Agreement</th>
+                <th>Group 3 Agreement</th>
+                <th>Group 4 Agreement</th>
+            </tr>
+        </thead>
+        <tbody id="resultsBody">
+        </tbody>
+    </table>
+
+    <script>
+        function uploadFile() {
+            let fileInput = document.getElementById("fileInput").files[0];
+            if (!fileInput) {
+                alert("Please select a file first.");
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append("file", fileInput);
+
+            fetch("/upload", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    displayResults(JSON.parse(data.data));
+                } else {
+                    alert("Error uploading file.");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        }
+
+        function displayResults(results) {
+            let resultsBody = document.getElementById("resultsBody");
+            resultsBody.innerHTML = "";
+
+            results.forEach(row => {
+                let newRow = document.createElement("tr");
+
+                Object.values(row).forEach(value => {
+                    let cell = document.createElement("td");
+                    cell.innerText = value + "%";
+                    if (value >= 75) cell.className = "green";
+                    else if (value >= 65) cell.className = "yellow";
+                    else cell.className = "red";
+                    newRow.appendChild(cell);
+                });
+
+                resultsBody.appendChild(newRow);
+            });
+        }
+    </script>
+
+</body>
+</html>
