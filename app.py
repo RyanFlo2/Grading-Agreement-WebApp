@@ -36,6 +36,9 @@ def upload_file():
     import logging
 
 # Enable logging
+import logging
+
+# Enable logging
 logging.basicConfig(level=logging.INFO)
 
 @app.route("/upload", methods=["POST"])
@@ -46,6 +49,37 @@ def upload_file():
     file = request.files["file"]
     if file.filename == "":
         return jsonify({"error": "No selected file"}), 400
+
+    # Save uploaded file
+    file_path = os.path.join("uploads", file.filename)
+    os.makedirs("uploads", exist_ok=True)
+    file.save(file_path)
+
+    # Read Excel file
+    df = pd.read_excel(file_path)
+
+    logging.info("\n🔍 EXCEL FILE PREVIEW:\n" + df.head().to_string())  # Convert to string
+
+    # Ignore columns B to F, use columns G to W
+    df_grades = df.iloc[:, 6:23]  # Selecting columns G to W
+
+    logging.info("\n✅ FILTERED DATA PREVIEW (Columns G to W):\n" + df_grades.head().to_string())  # Convert to string
+
+    # Define the four groups of columns
+    groups = {
+        "Group 1 (H-K)": df_grades.iloc[:, 1:5],  # H, I, J, K
+        "Group 2 (L-O)": df_grades.iloc[:, 5:9],  # L, M, N, O
+        "Group 3 (P-S)": df_grades.iloc[:, 9:13],  # P, Q, R, S
+        "Group 4 (T-W)": df_grades.iloc[:, 13:17]  # T, U, V, W
+    }
+
+    # Calculate agreement factors
+    agreement_results = {group: data.apply(calculate_percentage_agreement) for group, data in groups.items()}
+
+    # Convert results to JSON
+    results_json = pd.DataFrame(agreement_results).to_json(orient="records")
+
+    return jsonify({"status": "success", "data": results_json})
 
     # Save uploaded file
     file_path = os.path.join("uploads", file.filename)
